@@ -1,0 +1,52 @@
+version: '3.3'
+services:
+  webserver:
+    container_name: webserver
+    build:
+      context: ./my-php_81-apache
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - phpmyadmin
+      - mailhog
+    volumes:
+      - $PWD/apache/logs:/usr/local/apache2/logs
+      - $PWD/apache/error:/usr/local/apache2/error
+      - $PWD/apache/php_ini:/usr/local/etc/php/conf.d
+      - $PWD/apache/httpd:/etc/apache2
+      # site rootにしたいディレクトリを指定
+      - ~/Sites/:/var/www/html:rw
+  mysql:
+    platform: linux/x86_64
+    image: mysql:8.0.28
+    environment:
+      - MYSQL_ROOT_PASSWORD=test
+    ports:
+      - "4306:3306"
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - $PWD/db/mysql:/var/lib/mysql
+  phpmyadmin:
+    image: phpmyadmin
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOST=mysql
+      - PMA_USER=root
+      - PMA_PASSWORD=test
+    links:
+      - mysql
+    ports:
+      - 4040:80
+    volumes:
+      - ./phpmyadmin/sessions:/sessions
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    environment:
+      MH_STORAGE: maildir
+      MH_MAILDIR_PATH: /tmp
+    volumes:
+      - $PWD/maildir:/tmp
